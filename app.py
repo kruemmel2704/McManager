@@ -7,6 +7,7 @@ from mc_manager.core.bootstrap import check_and_install_dependencies
 check_and_install_dependencies()
 
 from flask import Flask, session
+from werkzeug.middleware.proxy_fix import ProxyFix
 from mc_manager.core.config import load_env
 
 # 2. Load environment variables
@@ -43,6 +44,9 @@ def create_app():
     app.register_blueprint(auth_bp)
     app.register_blueprint(api_bp)
     app.register_blueprint(dashboard_bp)
+    
+    # Apply ProxyFix for correct header handling behind Nginx/Apache
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
     
     return app
 

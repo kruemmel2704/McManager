@@ -74,9 +74,11 @@ def callback():
     """
     code = request.args.get('code')
     state = request.args.get('state')
+    stored_state = session.get('oauth_state')
     
     # Verify state to prevent CSRF
-    if not state or state != session.get('oauth_state'):
+    if not state or state != stored_state:
+        print(f"[AUTH DEBUG] State Mismatch! URL State: {state}, Session State: {stored_state}")
         return "Invalid session state. Possible CSRF attack.", 403
         
     if not code: return "Microsoft login failed (no code)", 400
