@@ -1,0 +1,7 @@
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+auth_config.json
+*.bak
+player_history.json
