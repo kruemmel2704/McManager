@@ -19,6 +19,9 @@ def get_status():
     """Returns the current server running status and PID. Requires Viewer role."""
     if not get_role():
         return jsonify({"status": "error", "message": "Access denied"}), 403
+    running_here = mc_server.mc_process is not None and mc_server.mc_process.poll() is None
+    ext_proc = is_server_running_ext()
+    
     # Check EULA status
     eula_accepted = False
     eula_path = "/opt/minecraft/eula.txt"
