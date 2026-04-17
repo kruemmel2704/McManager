@@ -19,12 +19,18 @@ def get_status():
     """Returns the current server running status and PID. Requires Viewer role."""
     if not get_role():
         return jsonify({"status": "error", "message": "Access denied"}), 403
-    running_here = mc_server.mc_process is not None and mc_server.mc_process.poll() is None
-    ext_proc = is_server_running_ext()
+    # Check EULA status
+    eula_accepted = False
+    eula_path = "/opt/minecraft/eula.txt"
+    if os.path.exists(eula_path):
+        with open(eula_path, 'r') as f:
+            eula_accepted = "eula=true" in f.read().lower()
+
     return jsonify({
         "running": running_here or (ext_proc is not None),
         "managed": running_here,
-        "pid": ext_proc.pid if ext_proc else None
+        "pid": ext_proc.pid if ext_proc else None,
+        "eula_accepted": eula_accepted
     })
 
 @api_bp.route('/stats', methods=['GET'])
@@ -213,3 +219,31 @@ def search_modpacks():
         {"id": 2, "name": "All the Mods 9", "version": "1.20.1"},
         {"id": 3, "name": "SkyFactory 4", "version": "1.12.2"}
     ])
+
+@api_bp.route('/eula/accept', methods=['POST'])
+def accept_eula():
+    """Accepts the Minecraft EULA by updating eula.txt. Requires Admin/OP."""
+    if get_role() not in ['admin', 'op']:
+        return jsonify({"status": "error", "message": "Access denied"}), 403
+    
+    eula_path = "/opt/minecraft/eula.txt"
+    try:
+        content = ""
+        if os.path.exists(eula_path):
+            with open(eula_path, 'r') as f:
+                content = f.read()
+        
+        # Replace or append eula=true
+        if "eula=" in content.lower():
+            import re
+            content = re.sub(r"(?i)eula\s*=\s*(false|true)?", "eula=true", content)
+        else:
+            if content and not content.endswith("\n"): content += "\n"
+            content += "eula=true\n"
+            
+        with open(eula_path, 'w') as f:
+            f.write(content)
+            
+        return jsonify({"status": "success", "message": "EULA accepted successfully."})
+    except Exception as e:
+        return jsonify({"status": "error", "message": f"Failed to update EULA: {e}"}), 500
