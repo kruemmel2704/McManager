@@ -1,105 +1,58 @@
-# Deploying McManager on Microsoft Azure
+# Microsoft Azure App Registration Guide
 
-This guide walks you through the process of setting up a Minecraft server and this dashboard on a Microsoft Azure Virtual Machine.
+This guide explains how to register an application in the Azure Portal to enable Microsoft & Xbox Live login for this dashboard.
 
-## 1. Create an Azure Virtual Machine
+## 1. Create a New App Registration
 
 1. Log in to the [Azure Portal](https://portal.azure.com/).
-2. Click **"Create a resource"** and search for **"Ubuntu Server 22.04 LTS"**.
-3. **Instance Details**:
-   - **Region**: Choose one closest to your players.
-   - **Size**: For Minecraft, a **B2s** (4GB RAM) is the bare minimum, but **B2ms** (8GB RAM) is recommended for better performance.
-4. **Administrator Account**:
-   - Use **SSH Public Key** (more secure) or **Password**.
-5. **Inbound Port Rules**:
-   - Initially, allow **SSH (22)**. We will add more ports later.
+2. Search for and select **"Entra ID"** (formerly Azure Active Directory).
+3. In the left-hand menu, click **"App registrations"** and then **"New registration"**.
+4. **Registration Details**:
+   - **Name**: e.g., `Minecraft-Server-Dashboard`
+   - **Supported account types**: Select **"Personal Microsoft accounts only"** (if you only want players to join) or **"Accounts in any organizational directory and personal Microsoft accounts"** (recommended for maximum compatibility).
+   - **Redirect URI**: 
+     - Select **"Web"** from the dropdown.
+     - Enter your callback URL: `http://<your-ip>:5000/callback` (or `https://your-domain.com/callback`).
+5. Click **"Register"**.
 
-## 2. Configure Networking (Firewall)
+## 2. Get Application (Client) ID
 
-To access your dashboard and the Minecraft server, you need to open specific ports in the Azure Network Security Group (NSG).
+1. Once registered, you will be on the **Overview** page.
+2. Copy the **"Application (client) ID"**. This value goes into `MS_CLIENT_ID` in your `.env` file.
 
-1. Go to your VM's **Networking** tab.
-2. Add **Inbound port rules**:
-   - **Port 25565**: Protocol TCP (Minecraft Server).
-   - **Port 5000**: Protocol TCP (McManager Dashboard).
-   - **Port 19132** (Optional): Protocol UDP (If using Bedrock/Geyser).
+## 3. Create a Client Secret
 
-## 3. Prepare the Server Environment
+1. In the left-hand menu, click **"Certificates & secrets"**.
+2. Go to the **"Client secrets"** tab and click **"+ New client secret"**.
+3. **Description**: e.g., `Dashboard-Secret`
+4. **Expires**: Choose a duration (e.g., 180 days).
+5. Click **"Add"**.
+6. **IMPORTANT**: Copy the **"Value"** immediately. You will not be able to see it again. This value goes into `MS_CLIENT_SECRET` in your `.env` file.
 
-Connect to your VM via SSH and run the following commands:
+## 4. Configure Authentication for Xbox Live
 
-```bash
-# Update system
-sudo apt update && sudo apt upgrade -y
+1. In the left-hand menu, click **"Authentication"**.
+2. Ensure **"Allow public client flows"** is set to **No** (the dashboard uses a backend "Confidential Client" flow).
+3. Ensure the Redirect URI you entered earlier is correct.
 
-# Install Java 21 (Required for modern Minecraft)
-sudo apt install openjdk-21-jre-headless -y
+## 5. API Permissions (Optional but Recommended)
 
-# Install Python and Pip
-sudo apt install python3 python3-pip -y
+Note: The dashboard requests the `XboxLive.signin` scope dynamically, but you can pre-configure it:
 
-# Create the standard directory
-sudo mkdir -p /opt/minecraft
-sudo chown $USER:$USER /opt/minecraft
+1. Click **"API permissions"** -> **"+ Add a permission"**.
+2. Search for **"Xbox Live"** (if available) or use **"Microsoft Graph"** -> **"User.Read"** (for basic profile access).
+3. *Note: Most Xbox permissions are requested directly by the app during the login flow.*
+
+## 6. Update your .env File
+
+Replace the placeholders in your `.env` file with the values from Azure:
+
+```env
+MS_CLIENT_ID=00000000-0000-0000-0000-000000000000
+MS_CLIENT_SECRET=your_secret_value_here
+MS_REDIRECT_URI=http://your-ip:5000/callback
+MS_AUTHORITY=https://login.microsoftonline.com/consumers
 ```
 
-## 4. Install McManager
-
-1. **Clone the repository**:
-   ```bash
-   cd /opt/minecraft
-   git clone <your-repo-url> dashboard
-   cd dashboard
-   ```
-
-2. **Install Python dependencies**:
-   ```bash
-   pip3 install -r requirements.txt
-   ```
-
-3. **Configure Environment**:
-   Copy the example environment file and fill in your secrets.
-   ```bash
-   cp .env.example .env
-   nano .env
-   ```
-
-## 5. Running as a Background Service
-
-To keep the dashboard running even after you logout, use a systemd service.
-
-1. **Create the service file**:
-   ```bash
-   sudo nano /etc/systemd/system/mcmanager.service
-   ```
-
-2. **Paste the following content** (update `User` and `WorkingDirectory` if necessary):
-   ```ini
-   [Unit]
-   Description=Minecraft Manager Dashboard
-   After=network.target
-
-   [Service]
-   User=ubuntu
-   WorkingDirectory=/opt/minecraft/dashboard
-   ExecStart=/usr/bin/python3 app.py
-   Restart=always
-
-   [Install]
-   WantedBy=multi-user.target
-   ```
-
-3. **Enable and start the service**:
-   ```bash
-   sudo systemctl daemon-reload
-   sudo systemctl enable mcmanager
-   sudo systemctl start mcmanager
-   ```
-
-## 6. Accessing the Dashboard
-
-You can now access your dashboard at:
-`http://<your-azure-vm-ip>:5000`
-
-> [!TIP]
-> **Domain & SSL**: For production, it's recommended to set up a DNS record (like `mc.example.com`) and use **Nginx** with **Certbot** as a reverse proxy to provide HTTPS access.
+> [!IMPORTANT]
+> **Production Note**: If you use `https` in production, ensure the `MS_REDIRECT_URI` starts with `https://`. Azure will reject authentication requests if the URI doesn't match exactly.
