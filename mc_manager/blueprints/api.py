@@ -10,10 +10,12 @@ from mc_manager.core.mc_server import (
     start_mc_server, stop_mc_server, send_command_to_server
 )
 
+# Central API blueprint for all dashboard functionalities
 api_bp = Blueprint('api', __name__, url_prefix='/api')
 
 @api_bp.route('/status', methods=['GET'])
 def get_status():
+    """Returns the current server running status and PID."""
     running_here = mc_server.mc_process is not None and mc_server.mc_process.poll() is None
     ext_proc = is_server_running_ext()
     return jsonify({
@@ -24,6 +26,7 @@ def get_status():
 
 @api_bp.route('/stats', methods=['GET'])
 def get_stats():
+    """Returns real-time CPU and RAM usage of the server process."""
     proc = None
     if mc_server.mc_process is not None and mc_server.mc_process.poll() is None:
         proc = psutil.Process(mc_server.mc_process.pid)
@@ -38,15 +41,17 @@ def get_stats():
         cpu_percent = proc.cpu_percent(interval=None) 
         ram_mb = proc.memory_info().rss / (1024 * 1024)
         return jsonify({"cpu": round(cpu_percent, 1), "ram": round(ram_mb, 1)})
-    except:
+    except Exception:
         return jsonify({"cpu": 0.0, "ram": 0.0})
 
 @api_bp.route('/logs', methods=['GET'])
 def get_logs():
+    """Returns the current log buffer."""
     return jsonify({"logs": list(mc_server.log_lines)})
 
 @api_bp.route('/players', methods=['GET'])
 def get_players():
+    """Returns currently online players and the overall player history."""
     return jsonify({
         "online": list(online_players),
         "history": player_history
@@ -54,6 +59,7 @@ def get_players():
 
 @api_bp.route('/properties', methods=['GET', 'POST'])
 def handle_properties():
+    """GET: Returns server.properties. POST: Updates server.properties."""
     if request.method == 'GET':
         return jsonify(load_properties())
     else:
@@ -63,8 +69,9 @@ def handle_properties():
 
 @api_bp.route('/gamerule', methods=['POST'])
 def set_gamerule():
+    """Sets a Minecraft gamerule. Requires OP or Admin role."""
     if get_role() not in ['admin', 'op']:
-        return jsonify({"status": "error", "message": "Keine Berechtigung"}), 403
+        return jsonify({"status": "error", "message": "Access denied"}), 403
     data = request.get_json()
     rule = data.get('rule')
     value = data.get('value')
@@ -76,6 +83,7 @@ def set_gamerule():
 
 @api_bp.route('/start', methods=['POST'])
 def start_server():
+    """Starts the Minecraft server with provided resources."""
     data = request.get_json() or {}
     ram = data.get('ram', 2048)
     cpu = data.get('cpu', 2)
@@ -89,13 +97,15 @@ def start_server():
 
 @api_bp.route('/stop', methods=['POST'])
 def stop_server():
+    """Stops the running Minecraft server."""
     success, msg = stop_mc_server()
     return jsonify({"status": "success" if success else "error", "message": msg})
 
 @api_bp.route('/command', methods=['POST'])
 def send_command():
+    """Sends a raw command to the server console. Requires Admin/OP."""
     if get_role() not in ['admin', 'op']:
-        return jsonify({"status": "error", "message": "Keine Berechtigung"}), 403
+        return jsonify({"status": "error", "message": "Access denied"}), 403
     data = request.get_json()
     command = data.get('command', '').strip()
     if not command:
@@ -105,6 +115,7 @@ def send_command():
 
 @api_bp.route('/versions/vanilla', methods=['GET'])
 def get_vanilla_versions():
+    """Fetches the latest Minecraft Vanilla releases from Mojang's API."""
     try:
         manifest_url = "https://launchermeta.mojang.com/mc/game/version_manifest.json"
         res = requests.get(manifest_url).json()
@@ -115,6 +126,7 @@ def get_vanilla_versions():
 
 @api_bp.route('/versions/paper', methods=['GET'])
 def get_paper_versions():
+    """Fetches the latest PaperMC versions from their API."""
     try:
         res = requests.get("https://api.papermc.io/v2/projects/paper").json()
         return jsonify(res['versions'][::-1][:15])
@@ -123,12 +135,13 @@ def get_paper_versions():
 
 @api_bp.route('/download/version', methods=['POST'])
 def download_version():
+    """Downloads and installs a specific Minecraft version .jar file."""
     if get_role() not in ['admin']:
-        return jsonify({"status": "error", "message": "Nur Admins können Versionen ändern"}), 403
+        return jsonify({"status": "error", "message": "Admin access required"}), 403
     data = request.get_json()
     v_type, version = data.get('type'), data.get('version')
     if is_server_running_ext():
-        return jsonify({"status": "error", "message": "Server muss gestoppt sein"}), 400
+        return jsonify({"status": "error", "message": "Server must be stopped first"}), 400
 
     try:
         target_path = "/opt/minecraft/server.jar"
@@ -147,22 +160,24 @@ def download_version():
         r = requests.get(download_url, stream=True)
         with open(target_path, 'wb') as f:
             for chunk in r.iter_content(chunk_size=8192): f.write(chunk)
-        return jsonify({"status": "success", "message": f"Version {version} installiert."})
+        return jsonify({"status": "success", "message": f"Version {version} installed."})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
 @api_bp.route('/plugins', methods=['GET'])
 def list_plugins():
+    """Lists all .jar files in the plugins folder."""
     plugin_dir = "/opt/minecraft/plugins"
     if not os.path.exists(plugin_dir): os.makedirs(plugin_dir)
     return jsonify([f for f in os.listdir(plugin_dir) if f.endswith('.jar')])
 
 @api_bp.route('/plugins/upload', methods=['POST'])
 def upload_plugin():
-    if get_role() not in ['admin', 'op']: return jsonify({"status": "error", "message": "Keine Berechtigung"}), 403
-    if 'file' not in request.files: return jsonify({"status": "error", "message": "Keine Datei"}), 400
+    """Handles plugin upload (.jar)."""
+    if get_role() not in ['admin', 'op']: return jsonify({"status": "error", "message": "Access denied"}), 403
+    if 'file' not in request.files: return jsonify({"status": "error", "message": "No file"}), 400
     file = request.files['file']
-    if file.filename == '' or not file.filename.endswith('.jar'): return jsonify({"status": "error", "message": "Ungültig"}), 400
+    if file.filename == '' or not file.filename.endswith('.jar'): return jsonify({"status": "error", "message": "Invalid file type"}), 400
     plugin_dir = "/opt/minecraft/plugins"
     if not os.path.exists(plugin_dir): os.makedirs(plugin_dir)
     file.save(os.path.join(plugin_dir, file.filename))
@@ -170,7 +185,8 @@ def upload_plugin():
 
 @api_bp.route('/plugins/delete', methods=['POST'])
 def delete_plugin():
-    if get_role() not in ['admin', 'op']: return jsonify({"status": "error", "message": "Keine Berechtigung"}), 403
+    """Deletes a plugin file."""
+    if get_role() not in ['admin', 'op']: return jsonify({"status": "error", "message": "Access denied"}), 403
     name = request.get_json().get('name')
     path = os.path.join("/opt/minecraft/plugins", name)
     if os.path.exists(path):
@@ -180,6 +196,7 @@ def delete_plugin():
 
 @api_bp.route('/modpacks/search', methods=['GET'])
 def search_modpacks():
+    """(Mock) search for CurseForge modpacks."""
     return jsonify([
         {"id": 1, "name": "Better Minecraft [FORGE]", "version": "1.20.1"},
         {"id": 2, "name": "All the Mods 9", "version": "1.20.1"},
