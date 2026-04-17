@@ -78,9 +78,21 @@ By default, the dashboard will be available at http://your-ip:5000.
 - The auth_config.json file stores the hashed admin password.
 - Microsoft/Xbox Live logins are verified against the local Minecraft ops.json to assign roles.
 
-## Configuration
+## Setup and Installation
 
-- [Microsoft Auth Setup (Azure)](AZURE_GUIDE.md) - Learn how to register your app in Azure to enable Microsoft & Xbox login.
+### 1. Fast Installation
+Run the included setup script to install dependencies and prepare the environment:
+```bash
+python3 setup.py
+```
+
+### 2. Configuration Guides
+- [Microsoft Auth Setup (Azure)](AZURE_GUIDE.md) - Register your app for OAuth2 login.
+- [Minecraft Server Setup](SERVER_SETUP.md) - How to configure your Minecraft server for the dashboard.
+
+## Security
+- On first launch, the dashboard will prompt you to set an Admin Password.
+- Microsoft/Xbox Live logins are verified against the local Minecraft ops.json to assign roles.
 
 ## License
 This project is for private server management. Use at your own risk.
