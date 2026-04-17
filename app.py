@@ -23,10 +23,16 @@ def create_app():
     """
     app = Flask(__name__)
     
-    # Secret key for session encryption
-    app.secret_key = os.urandom(24)
-    # Set session lifetime to 31 days
-    app.config['PERMANENT_SESSION_LIFETIME'] = 2678400 
+    # Secret key for session encryption - loaded from environment for persistence
+    app.secret_key = os.getenv("SESSION_SECRET", os.urandom(24))
+    
+    # Session Cookie Security Flags
+    app.config.update(
+        SESSION_COOKIE_HTTPONLY=True,
+        SESSION_COOKIE_SECURE=os.getenv("SESSION_COOKIE_SECURE", "False").lower() == "true",
+        SESSION_COOKIE_SAMESITE='Lax',
+        PERMANENT_SESSION_LIFETIME=2678400 # 31 days
+    )
     
     @app.before_request
     def make_session_permanent():

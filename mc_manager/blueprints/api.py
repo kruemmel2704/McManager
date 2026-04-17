@@ -2,7 +2,8 @@ import os
 import requests
 import shutil
 import psutil
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, abort
+from werkzeug.utils import secure_filename, safe_join
 import mc_manager.core.mc_server as mc_server
 from mc_manager.core.config import get_role, load_properties, save_properties
 from mc_manager.core.mc_server import (
@@ -15,7 +16,9 @@ api_bp = Blueprint('api', __name__, url_prefix='/api')
 
 @api_bp.route('/status', methods=['GET'])
 def get_status():
-    """Returns the current server running status and PID."""
+    """Returns the current server running status and PID. Requires Viewer role."""
+    if not get_role():
+        return jsonify({"status": "error", "message": "Access denied"}), 403
     running_here = mc_server.mc_process is not None and mc_server.mc_process.poll() is None
     ext_proc = is_server_running_ext()
     return jsonify({
@@ -59,7 +62,9 @@ def get_players():
 
 @api_bp.route('/properties', methods=['GET', 'POST'])
 def handle_properties():
-    """GET: Returns server.properties. POST: Updates server.properties."""
+    """GET: Returns server.properties. POST: Updates server.properties. Requires OP/Admin."""
+    if get_role() not in ['admin', 'op']:
+        return jsonify({"status": "error", "message": "Access denied"}), 403
     if request.method == 'GET':
         return jsonify(load_properties())
     else:
@@ -83,7 +88,9 @@ def set_gamerule():
 
 @api_bp.route('/start', methods=['POST'])
 def start_server():
-    """Starts the Minecraft server with provided resources."""
+    """Starts the Minecraft server with provided resources. Requires OP/Admin."""
+    if get_role() not in ['admin', 'op']:
+        return jsonify({"status": "error", "message": "Access denied"}), 403
     data = request.get_json() or {}
     ram = data.get('ram', 2048)
     cpu = data.get('cpu', 2)
@@ -97,7 +104,9 @@ def start_server():
 
 @api_bp.route('/stop', methods=['POST'])
 def stop_server():
-    """Stops the running Minecraft server."""
+    """Stops the running Minecraft server. Requires Admin/OP."""
+    if get_role() not in ['admin', 'op']:
+        return jsonify({"status": "error", "message": "Access denied"}), 403
     success, msg = stop_mc_server()
     return jsonify({"status": "success" if success else "error", "message": msg})
 
@@ -177,22 +186,24 @@ def upload_plugin():
     if get_role() not in ['admin', 'op']: return jsonify({"status": "error", "message": "Access denied"}), 403
     if 'file' not in request.files: return jsonify({"status": "error", "message": "No file"}), 400
     file = request.files['file']
-    if file.filename == '' or not file.filename.endswith('.jar'): return jsonify({"status": "error", "message": "Invalid file type"}), 400
+    filename = secure_filename(file.filename)
     plugin_dir = "/opt/minecraft/plugins"
     if not os.path.exists(plugin_dir): os.makedirs(plugin_dir)
-    file.save(os.path.join(plugin_dir, file.filename))
+    file.save(safe_join(plugin_dir, filename))
     return jsonify({"status": "success"})
 
 @api_bp.route('/plugins/delete', methods=['POST'])
 def delete_plugin():
     """Deletes a plugin file."""
-    if get_role() not in ['admin', 'op']: return jsonify({"status": "error", "message": "Access denied"}), 403
-    name = request.get_json().get('name')
-    path = os.path.join("/opt/minecraft/plugins", name)
-    if os.path.exists(path):
+    if get_role() not in ['admin', 'op']:
+        return jsonify({"status": "error", "message": "Access denied"}), 403
+    name = secure_filename(request.get_json().get('name', ''))
+    plugin_dir = "/opt/minecraft/plugins"
+    path = safe_join(plugin_dir, name)
+    if path and os.path.exists(path):
         os.remove(path)
         return jsonify({"status": "success"})
-    return jsonify({"status": "error"}), 404
+    return jsonify({"status": "error", "message": "File not found"}), 404
 
 @api_bp.route('/modpacks/search', methods=['GET'])
 def search_modpacks():

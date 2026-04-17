@@ -31,34 +31,52 @@ def save_auth_config(config):
     with open(CONFIG_FILE, 'w') as f:
         json.dump(config, f)
 
-def is_op(username):
+def get_permission_level(xuid, username):
     """
-    Checks if a given Minecraft username is listed in the server's ops.json.
-    Used for local role assignment (OP role).
+    Checks the permission level of a user.
+    1. Checks permissions.json by XUID (Bedrock standard).
+    2. Checks ops.json by username (Java standard fallback).
+    Returns 'admin', 'op', 'member', or 'viewer'.
     """
+    # 1. Check permissions.json (XUID based)
+    perm_path = '/opt/minecraft/permissions.json'
+    if xuid and os.path.exists(perm_path):
+        try:
+            with open(perm_path, 'r') as f:
+                perms = json.load(f)
+                for entry in perms:
+                    if str(entry.get('xuid')) == str(xuid):
+                        perm = entry.get('permission', 'member')
+                        if perm == 'operator': return 'op'
+                        return perm
+        except Exception:
+            pass
+
+    # 2. Check ops.json (Username/UUID based fallback)
     ops_path = '/opt/minecraft/ops.json'
-    if not os.path.exists(ops_path):
-        return False
-    try:
-        with open(ops_path, 'r') as f:
-            ops = json.load(f)
-            # Check if any entry in ops.json matches the username (case-insensitive)
-            return any(op['name'].lower() == username.lower() for op in ops)
-    except Exception:
-        return False
+    if username and os.path.exists(ops_path):
+        try:
+            with open(ops_path, 'r') as f:
+                ops = json.load(f)
+                for op in ops:
+                    if op.get('name', '').lower() == username.lower():
+                        return 'op'
+        except Exception:
+            pass
+            
+    return 'viewer'
 
 def get_role():
     """
     Determines the current user's role based on their session.
-    Roles: 'admin' (Web UI Admin), 'op' (Minecraft Server OP), 'viewer' (Read-only).
+    Roles: 'admin', 'op', 'member', 'viewer'.
     """
     if not session.get('logged_in'):
         return None
     if session.get('is_admin'):
         return 'admin'
-    if is_op(session.get('username', '')):
-        return 'op'
-    return 'viewer'
+    
+    return get_permission_level(session.get('xuid'), session.get('username'))
 
 def load_properties():
     """

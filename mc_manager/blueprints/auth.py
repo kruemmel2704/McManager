@@ -1,7 +1,8 @@
 import os
 import requests
 import json
-from flask import Blueprint, render_template, request, jsonify, session, redirect, url_for
+import secrets
+from flask import Blueprint, render_template, request, jsonify, session, redirect, url_for, abort
 from werkzeug.security import generate_password_hash, check_password_hash
 from mc_manager.core.config import load_auth_config, save_auth_config
 
@@ -52,14 +53,17 @@ def login():
         # Local Admin Login
         pw = request.form.get('password')
         config = load_auth_config()
-        if check_password_hash(config.get('admin_password_hash'), pw):
+        stored_hash = config.get('admin_password_hash')
+        if stored_hash and pw and check_password_hash(stored_hash, pw):
             session['logged_in'] = True
             session['is_admin'] = True
             session['username'] = "WebAdmin"
             return redirect(url_for('dashboard.index'))
     
-    # Generate Microsoft OAuth2 Authorization URL
-    ms_url = f"{MS_AUTHORITY}/oauth2/v2.0/authorize?client_id={MS_CLIENT_ID}&response_type=code&redirect_uri={MS_REDIRECT_URI}&scope=XboxLive.signin"
+    # Generate Microsoft OAuth2 Authorization URL with state for CSRF protection
+    state = secrets.token_urlsafe(16)
+    session['oauth_state'] = state
+    ms_url = f"{MS_AUTHORITY}/oauth2/v2.0/authorize?client_id={MS_CLIENT_ID}&response_type=code&redirect_uri={MS_REDIRECT_URI}&scope=XboxLive.signin&state={state}"
     return render_template('login.html', ms_url=ms_url)
 
 @auth_bp.route('/callback')
@@ -69,6 +73,12 @@ def callback():
     Exchanges authorization code for tokens and fetches Xbox Gamertag for identification.
     """
     code = request.args.get('code')
+    state = request.args.get('state')
+    
+    # Verify state to prevent CSRF
+    if not state or state != session.get('oauth_state'):
+        return "Invalid session state. Possible CSRF attack.", 403
+        
     if not code: return "Microsoft login failed (no code)", 400
     
     # 1. Exchange Code for MS Access Token
@@ -97,6 +107,7 @@ def callback():
         xbl_res = requests.post(xbl_url, json=xbl_payload).json()
         xbl_token = xbl_res['Token']
         uhs = xbl_res['DisplayClaims']['xui'][0]['uhs']
+        xuid = xbl_res['DisplayClaims']['xui'][0].get('xid')
 
         # 3. XSTS Authorization (Authorize access specifically to Xbox Profile data)
         xsts_url = "https://xsts.auth.xboxlive.com/xsts/authorize"
@@ -133,6 +144,7 @@ def callback():
         # Successful auth: Create session
         session['logged_in'] = True
         session['username'] = username
+        session['xuid'] = xuid
         session['is_admin'] = False
         
         return redirect(url_for('dashboard.index'))
