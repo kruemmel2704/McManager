@@ -1,9 +1,15 @@
 import os
+import sys
+
+# 1. Dependency Check
+# This is done before importing Flask to ensure we can auto-install missing packages.
+from mc_manager.core.bootstrap import check_and_install_dependencies
+check_and_install_dependencies()
+
 from flask import Flask, session
 from mc_manager.core.config import load_env
 
-# 1. Load environment variables from .env file before anything else.
-# This ensures that variables like MS_CLIENT_ID are available when blueprints are imported.
+# 2. Load environment variables
 load_env()
 
 from mc_manager.blueprints.auth import auth_bp
