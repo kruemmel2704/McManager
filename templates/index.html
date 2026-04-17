@@ -90,6 +90,25 @@
                 if (btnStart) btnStart.style.display = 'inline-flex';
                 if (btnStop) btnStop.style.display = 'none';
             }
+
+            // Handle EULA Notice
+            const eulaNotice = document.getElementById('eulaNotice');
+            if (eulaNotice) {
+                if (!data.eula_accepted) {
+                    eulaNotice.style.display = 'block';
+                    eulaNotice.innerHTML = `
+                        <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger); border-left: 4px solid var(--danger); padding: 1rem; border-radius: 8px;">
+                            <div style="font-weight: 700; color: var(--danger); margin-bottom: 0.5rem;">EULA not accepted!</div>
+                            <p style="font-size: 0.85rem; margin-bottom: 1rem; color: var(--text-muted);">
+                                You must accept the Minecraft End User License Agreement before you can start the server.
+                            </p>
+                            <button class="btn btn-danger" onclick="acceptEula()" style="font-size: 0.8rem; padding: 0.4rem 1rem;">Accept EULA</button>
+                        </div>
+                    `;
+                } else {
+                    eulaNotice.style.display = 'none';
+                }
+            }
         } catch (e) { }
     }
 
@@ -202,6 +221,18 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ command })
         });
+    }
+
+    async function acceptEula() {
+        if (!confirm("Are you sure you want to accept the Minecraft EULA?")) return;
+        const res = await fetch('/api/eula/accept', { method: 'POST' });
+        const data = await res.json();
+        if (data.status === 'success') {
+            alert("EULA accepted! You can now start the server.");
+            fetchStatus();
+        } else {
+            alert("Error: " + data.message);
+        }
     }
 
     // --- Properties ---
