@@ -27,10 +27,10 @@
 </header>
 
 <nav>
-    <div class="nav-link active" onclick="showTab('overview')">Übersicht</div>
-    <div class="nav-link" onclick="showTab('players')">Spieler</div>
+    <div class="nav-link active" onclick="showTab('overview')">Overview</div>
+    <div class="nav-link" onclick="showTab('players')">Players</div>
     <div class="nav-link" onclick="showTab('manager')">Manager</div>
-    <div class="nav-link" onclick="showTab('settings')">Server-Einstellungen</div>
+    <div class="nav-link" onclick="showTab('settings')">Server Settings</div>
     <div class="nav-link" onclick="showTab('gamerules')">Gamerules</div>
 </nav>
 
@@ -78,7 +78,7 @@
 
             if (data.running) {
                 pill.className = "status-pill status-online";
-                text.textContent = data.managed ? "Online" : "Online (Fremdstart)";
+                text.textContent = data.managed ? "Online" : "Online (External)";
                 if (btnStart) btnStart.style.display = 'none';
                 if (btnStop) {
                     btnStop.style.display = 'inline-flex';
@@ -127,7 +127,7 @@
             if (!isRunning) {
                 onlineList.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 2rem;">Server offline.</p>';
             } else if (data.online.length === 0) {
-                onlineList.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 2rem;">Keine Spieler online.</p>';
+                onlineList.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 2rem;">No players online.</p>';
             } else {
                 onlineList.innerHTML = data.online.map(p => `
                     <div class="player-row">
@@ -151,7 +151,7 @@
             });
 
             if (historyEntries.length === 0) {
-                historyList.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 2rem;">Noch keine Spieler bekannt.</p>';
+                historyList.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 2rem;">No players known yet.</p>';
             } else {
                 historyList.innerHTML = historyEntries.map(([name, info]) => `
                     <div class="player-row" style="opacity: ${data.online.includes(name) ? '1' : '0.6'}">
@@ -159,7 +159,7 @@
                             <div class="player-avatar" style="background: ${data.online.includes(name) ? 'linear-gradient(135deg, #4ade80, #22c55e)' : 'var(--border)'}"></div>
                             <div>
                                 <div style="font-size: 0.9rem;">${name} ${data.online.includes(name) ? '<span style="color: var(--primary); font-size: 0.7rem; margin-left: 5px;">● ONLINE</span>' : ''}</div>
-                                <div style="font-size: 0.7rem; color: var(--text-muted);">Zuletzt: ${info.last_seen}</div>
+                                <div style="font-size: 0.7rem; color: var(--text-muted);">Last seen: ${info.last_seen}</div>
                             </div>
                         </div>
                         <div class="player-actions">
@@ -235,20 +235,20 @@
             body: JSON.stringify(currentProperties)
         });
         const data = await res.json();
-        alert(data.message + " (Neustart erforderlich)");
+        alert(data.message + " (Restart required)");
     }
 
     // --- Gamerules ---
     const rules = [
-        { id: 'minecraft:advance_time', name: 'Zeitfortschritt', desc: 'Tag/Nacht Zyklus steuern.', type: 'bool' },
-        { id: 'minecraft:keep_inventory', name: 'Inventar behalten', desc: 'Items bleiben nach Tod erhalten.', type: 'bool' },
-        { id: 'minecraft:mob_griefing', name: 'Mob Griefing', desc: 'Creeper sprengen Blöcke etc.', type: 'bool' },
-        { id: 'minecraft:spawn_mobs', name: 'Mob Spawning', desc: 'Natürliches Erscheinen von Monstern.', type: 'bool' },
-        { id: 'minecraft:weather_cycle', name: 'Wetter Zyklus', desc: 'Regen und Gewitter erlauben.', type: 'bool' },
-        { id: 'minecraft:fire_spread_radius_around_player', name: 'Feuerausbreitung (Radius)', desc: 'Radius um Spieler (0=Aus, -1=Global).', type: 'int', default: 32 },
-        { id: 'minecraft:natural_regeneration', name: 'Natürliche Heilung', desc: 'Heilung durch Sättigung.', type: 'bool' },
-        { id: 'minecraft:spawn_chunk_radius', name: 'Spawn Chunk Radius', desc: 'Größe des geladenen Spawn-Bereichs.', type: 'int', default: 2 },
-        { id: 'minecraft:show_advancement_messages', name: 'Fortschritts-Meldungen', desc: 'Zeige Achievements im Chat.', type: 'bool' }
+        { id: 'minecraft:advance_time', name: 'Time Progression', desc: 'Control day/night cycle.', type: 'bool' },
+        { id: 'minecraft:keep_inventory', name: 'Keep Inventory', desc: 'Keep items after death.', type: 'bool' },
+        { id: 'minecraft:mob_griefing', name: 'Mob Griefing', desc: 'Creepers explode blocks, etc.', type: 'bool' },
+        { id: 'minecraft:spawn_mobs', name: 'Mob Spawning', desc: 'Natural monster spawning.', type: 'bool' },
+        { id: 'minecraft:weather_cycle', name: 'Weather Cycle', desc: 'Allow rain and storms.', type: 'bool' },
+        { id: 'minecraft:fire_spread_radius_around_player', name: 'Fire Spread (Radius)', desc: 'Radius around player (0=Off, -1=Global).', type: 'int', default: 32 },
+        { id: 'minecraft:natural_regeneration', name: 'Natural Regeneration', desc: 'Healing through saturation.', type: 'bool' },
+        { id: 'minecraft:spawn_chunk_radius', name: 'Spawn Chunk Radius', desc: 'Size of loaded spawn area.', type: 'int', default: 2 },
+        { id: 'minecraft:show_advancement_messages', name: 'Advancement Messages', desc: 'Show achievements in chat.', type: 'bool' }
     ];
 
     function renderGamerules() {
@@ -291,7 +291,7 @@
     async function loadVersionList() {
         const type = document.getElementById('versionType').value;
         const select = document.getElementById('versionSelect');
-        select.innerHTML = '<option>Lade...</option>';
+        select.innerHTML = '<option>Loading...</option>';
         try {
             const res = await fetch(`/api/versions/${type}`);
             const versions = await res.json();
@@ -301,15 +301,15 @@
                 return `<option value="${id}">${id}</option>`;
             }).join('');
         } catch (e) {
-            select.innerHTML = '<option>Fehler beim Laden</option>';
+            select.innerHTML = '<option>Error loading versions</option>';
         }
     }
 
     async function downloadVersion() {
         const type = document.getElementById('versionType').value;
         const version = document.getElementById('versionSelect').value;
-        if(!confirm(`Möchtest du wirklich ${type} ${version} installieren?`)) return;
-        alert('Download gestartet...');
+        if(!confirm(`Install ${type} ${version}?`)) return;
+        alert('Download started...');
         const res = await fetch('/api/download/version', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
@@ -324,7 +324,7 @@
         const res = await fetch('/api/plugins');
         const plugins = await res.json();
         if(plugins.length === 0) {
-            list.innerHTML = '<p style="padding: 1rem; color: var(--text-muted);">Keine Plugins installiert.</p>';
+            list.innerHTML = '<p style="padding: 1rem; color: var(--text-muted);">No plugins installed.</p>';
             return;
         }
         list.innerHTML = plugins.map(p => `
@@ -346,12 +346,12 @@
         formData.append('file', input.files[0]);
         const res = await fetch('/api/plugins/upload', { method: 'POST', body: formData });
         const data = await res.json();
-        alert(data.message || "Upload fertig");
+        alert(data.message || "Upload finished");
         loadPlugins();
     }
 
     async function deletePlugin(name) {
-        if(!confirm('Soll dieses Plugin gelöscht werden?')) return;
+        if(!confirm('Delete this plugin?')) return;
         await fetch('/api/plugins/delete', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
@@ -371,7 +371,7 @@
                     <span class="gamerule-title">${p.name}</span>
                     <span class="gamerule-desc">MC Version: ${p.version}</span>
                 </div>
-                <button class="btn btn-primary" style="font-size: 0.8rem;">Installieren</button>
+                <button class="btn btn-primary" style="font-size: 0.8rem;">Install</button>
             </div>
         `).join('');
     }

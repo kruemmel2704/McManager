@@ -6,17 +6,17 @@
             </div>
             <div class="stats-group">
                 <div class="stat-card">
-                    <div class="stat-label">CPU Auslastung</div>
+                    <div class="stat-label">CPU Usage</div>
                     <div class="stat-value" id="cpuLabel">0.0%</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-label">RAM Nutzung</div>
+                    <div class="stat-label">RAM Usage</div>
                     <div class="stat-value" id="ramLabel">0 MB</div>
                 </div>
             </div>
             <div style="margin-top: 1.5rem;">
                 <div class="form-group">
-                    <label>RAM Zuweisung (MB)</label>
+                    <label>RAM Allocation (MB)</label>
                     <input type="number" id="ramInput" value="2048" min="512">
                 </div>
                 <div class="form-group">
@@ -28,13 +28,13 @@
 
         <div class="card" style="grid-column: span 1.5;">
             <div class="card-header">
-                <h2>Konsole</h2>
+                <h2>Console</h2>
             </div>
             <div class="console-box">
                 <div class="console-logs" id="consoleOutput"></div>
                 <div class="console-input-wrap">
-                    <input type="text" id="commandInput" placeholder="Befehl eingeben..." autocomplete="off">
-                    <button class="btn btn-primary" onclick="sendCommand()">Senden</button>
+                    <input type="text" id="commandInput" placeholder="Enter command..." autocomplete="off">
+                    <button class="btn btn-primary" onclick="sendCommand()">Send</button>
                 </div>
             </div>
         </div>

@@ -3,9 +3,9 @@
         <div class="card-header">
             <h2>Server Properties</h2>
             {% if role in ['admin', 'op'] %}
-            <button class="btn btn-primary" onclick="saveProperties()">Speichern</button>
+            <button class="btn btn-primary" onclick="saveProperties()">Save</button>
             {% else %}
-            <span style="font-size: 0.8rem; color: var(--text-muted);">Nur Lesezugriff</span>
+            <span style="font-size: 0.8rem; color: var(--text-muted);">Read-only access</span>
             {% endif %}
         </div>
         <div class="properties-grid" id="propertiesGrid">

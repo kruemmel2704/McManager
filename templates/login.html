@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -86,18 +86,18 @@
 <body>
     <div class="login-card">
         <h1>Dashboard Login</h1>
-        <p>Wähle eine Methode zum Fortfahren</p>
+        <p>Choose a method to continue</p>
 
         <a href="{{ ms_url }}" class="ms-btn">
             <svg width="20" height="20" viewBox="0 0 23 23"><path fill="#f3f3f3" d="M0 0h11v11H0z"/><path fill="#f3f3f3" d="M12 0h11v11H12z"/><path fill="#f3f3f3" d="M0 12h11v23H0z"/><path fill="#f3f3f3" d="M12 12h11v23H12z"/></svg>
-            Mit Microsoft anmelden
+            Sign in with Microsoft
         </a>
 
-        <div class="divider"><span>oder lokal</span></div>
+        <div class="divider"><span>or local</span></div>
 
         <form method="POST">
-            <input type="password" name="password" placeholder="Admin Passwort" required>
-            <button type="submit" class="admin-btn">Lokal Anmelden</button>
+            <input type="password" name="password" placeholder="Admin Password" required>
+            <button type="submit" class="admin-btn">Login Locally</button>
         </form>
     </div>
 </body>
