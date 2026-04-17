@@ -1,1095 +1,389 @@
-<!DOCTYPE html>
-<html lang="de">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Minecraft Server Dashboard</title>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
-        rel="stylesheet">
-    <style>
-        :root {
-            --bg-dark: #050505;
-            --bg-card: #0f0f0f;
-            --bg-accent: rgba(255, 255, 255, 0.03);
-            --primary: #4ade80;
-            --primary-glow: rgba(74, 222, 128, 0.4);
-            --secondary: #3b82f6;
-            --danger: #f87171;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --border: rgba(255, 255, 255, 0.08);
-            --radius-lg: 16px;
-            --radius-md: 12px;
-            --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        * {
-            box-sizing: border-box;
-            scrollbar-width: thin;
-            scrollbar-color: var(--border) transparent;
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg-dark);
-            background-image:
-                radial-gradient(at 0% 0%, rgba(74, 222, 128, 0.05) 0px, transparent 50%),
-                radial-gradient(at 100% 100%, rgba(59, 130, 246, 0.05) 0px, transparent 50%);
-            color: var(--text-main);
-            margin: 0;
-            padding: 0;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            overflow-x: hidden;
-        }
-
-        .layout {
-            max-width: 1200px;
-            margin: 0 auto;
-            width: 100%;
-            padding: 2rem;
-            display: flex;
-            flex-direction: column;
-            gap: 2rem;
-        }
-
-        /* --- Header --- */
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        /* --- Gamerules Grid --- */
-        .gamerules-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 1.5rem;
-            margin-top: 1.5rem;
-        }
-
-        .gamerule-card {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 12px;
-            padding: 1.25rem;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            min-height: 160px;
-            transition: all 0.3s ease;
-        }
-
-        .gamerule-card:hover {
-            background: rgba(255, 255, 255, 0.05);
-            border-color: var(--primary);
-            transform: translateY(-2px);
-        }
-
-        .gamerule-info {
-            margin-bottom: 1rem;
-        }
-
-        .gamerule-title {
-            font-weight: 600;
-            font-size: 1.05rem;
-            color: #fff;
-            margin-bottom: 0.4rem;
-            display: block;
-        }
-
-        .gamerule-desc {
-            font-size: 0.85rem;
-            color: rgba(255, 255, 255, 0.5);
-            line-height: 1.5;
-            display: block;
-        }
-
-        .gamerule-id {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.75rem;
-            color: var(--primary);
-            opacity: 0.7;
-            display: block;
-            margin-top: 0.6rem;
-        }
-
-        .gamerule-control {
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-            padding-top: 1rem;
-            margin-top: auto;
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .gamerule-input {
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: #fff;
-            border-radius: 8px;
-            padding: 0.5rem;
-            width: 80px;
-            text-align: center;
-            font-family: inherit;
-            font-weight: 600;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-
-        .gamerule-input:focus {
-            border-color: var(--primary);
-        }
-
-        .brand h1 {
-            margin: 0;
-            font-size: 1.5rem;
-            font-weight: 800;
-            letter-spacing: -0.025em;
-            background: linear-gradient(to right, #fff, #94a3b8);
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .status-pill {
-            display: flex;
-            align-items: center;
-            gap: 0.6rem;
-            padding: 0.5rem 1rem;
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 9999px;
-            font-size: 0.85rem;
-            font-weight: 600;
-        }
-
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: var(--text-muted);
-        }
-
-        .status-online .status-dot {
-            background: var(--primary);
-            box-shadow: 0 0 12px var(--primary-glow);
-        }
-
-        .status-offline .status-dot {
-            background: var(--danger);
-        }
-
-        /* --- Navigation --- */
-        nav {
-            display: flex;
-            background: var(--bg-card);
-            padding: 0.4rem;
-            border-radius: var(--radius-md);
-            border: 1px solid var(--border);
-            align-self: flex-start;
-        }
-
-        .nav-link {
-            padding: 0.6rem 1.2rem;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            font-weight: 500;
-            color: var(--text-muted);
-            transition: var(--transition);
-        }
-
-        .nav-link:hover {
-            color: #fff;
-            background: rgba(255, 255, 255, 0.05);
-        }
-
-        .nav-link.active {
-            color: #fff;
-            background: var(--bg-accent);
-            box-shadow: inset 0 0 0 1px var(--border);
-        }
-
-        /* --- Content Sections --- */
-        .tab-content {
-            display: none;
-            animation: fadeIn 0.3s ease;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(4px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-lg);
-            padding: 1.5rem;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-        }
-
-        .card-header {
-            margin-bottom: 1.5rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .card h2 {
-            margin: 0;
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: var(--text-main);
-        }
-
-        /* --- Overview Grid --- */
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 1.5rem;
-        }
-
-        .stats-group {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-        }
-
-        .stat-card {
-            background: var(--bg-accent);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-md);
-            padding: 1.2rem;
-            text-align: center;
-        }
-
-        .stat-label {
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: var(--text-muted);
-            margin-bottom: 0.5rem;
-        }
-
-        .stat-value {
-            font-size: 1.5rem;
-            font-weight: 800;
-            font-variant-numeric: tabular-nums;
-        }
-
-        /* --- Console --- */
-        .console-box {
-            background: #000;
-            border-radius: var(--radius-md);
-            border: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
-            height: 400px;
-        }
-
-        .console-logs {
-            flex: 1;
-            padding: 1rem;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.8rem;
-            overflow-y: auto;
-            color: #d1d5db;
-        }
-
-        .console-input-wrap {
-            padding: 0.75rem;
-            border-top: 1px solid var(--border);
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .console-input-wrap input {
-            flex: 1;
-            background: transparent;
-            border: none;
-            color: #fff;
-            font-family: 'JetBrains Mono', monospace;
-            outline: none;
-        }
-
-        /* --- Inputs & Buttons --- */
-        .form-group {
-            margin-bottom: 1rem;
-        }
-
-        .form-group label {
-            display: block;
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: var(--text-muted);
-            margin-bottom: 0.4rem;
-        }
-
-        input[type="text"],
-        input[type="number"],
-        select {
-            width: 100%;
-            background: var(--bg-accent);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 0.6rem 0.8rem;
-            color: #fff;
-            font-family: inherit;
-            transition: var(--transition);
-        }
-
-        input:focus {
-            border-color: var(--secondary);
-            outline: none;
-        }
-
-        .btn {
-            padding: 0.6rem 1.2rem;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            border: none;
-            transition: var(--transition);
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-family: inherit;
-        }
-
-        .btn-primary {
-            background: #fff;
-            color: #000;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
-        }
-
-        .btn-danger {
-            background: var(--danger);
-            color: #fff;
-        }
-
-        .btn-success {
-            background: var(--primary);
-            color: #000;
-        }
-
-        /* --- Properties Grid (As requested) --- */
-        .properties-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 1.5rem;
-        }
-
-        .prop-item {
-            display: flex;
-            flex-direction: column;
-            gap: 0.4rem;
-            padding: 1rem;
-            background: var(--bg-accent);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-md);
-        }
-
-        .prop-item label {
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: var(--text-muted);
-        }
-
-        /* --- Gamerules & Switches --- */
-        .gamerules-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-            gap: 1rem;
-        }
-
-        .rule-card {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 1rem;
-            background: var(--bg-accent);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-md);
-        }
-
-        .rule-info h4 {
-            margin: 0;
-            font-size: 0.9rem;
-        }
-
-        .rule-info p {
-            margin: 0.2rem 0 0;
-            font-size: 0.75rem;
-            color: var(--text-muted);
-        }
-
-        /* Switch UI */
-        .switch {
-            position: relative;
-            display: inline-block;
-            width: 44px;
-            height: 22px;
-        }
-
-        .switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: var(--border);
-            transition: .4s;
-            border-radius: 34px;
-        }
-
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 16px;
-            width: 16px;
-            left: 3px;
-            bottom: 3px;
-            background-color: white;
-            transition: .4s;
-            border-radius: 50%;
-        }
-
-        input:checked+.slider {
-            background-color: var(--primary);
-        }
-
-        input:checked+.slider:before {
-            transform: translateX(22px);
-        }
-
-        /* --- Players --- */
-        .player-list {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-
-        .player-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0.8rem 1.2rem;
-            background: var(--bg-accent);
-            border-radius: var(--radius-md);
-        }
-
-        .player-name {
-            display: flex;
-            align-items: center;
-            gap: 0.8rem;
-            font-weight: 600;
-        }
-
-        .player-avatar {
-            width: 32px;
-            height: 32px;
-            background: var(--border);
-            border-radius: 4px;
-        }
-
-        /* Rollen-Farben */
-        .role-badge { font-size: 0.7rem; text-transform: uppercase; }
-        .role-admin, .role-op { color: var(--primary); font-weight: 700; }
-        .role-viewer { color: var(--text-muted); }
-    </style>
-</head>
-
-<body>
-
-    <div class="layout">
-        <header>
-            <div class="brand">
-                <h1>MC Manager</h1>
-                <div id="statusPill" class="status-pill status-offline">
-                    <span class="status-dot"></span>
-                    <span id="statusText">Offline</span>
-                </div>
-            </div>
-            <div class="header-actions" style="display: flex; align-items: center; gap: 1.5rem;">
-                <div class="user-info" style="text-align: right; line-height: 1.2;">
-                    <div style="font-size: 0.9rem; font-weight: 700;">{{ username }}</div>
-                    <div class="role-badge">
-                        Rolle: <span class="role-{{ role }}">{{ role }}</span>
-                    </div>
-                </div>
-                
-                {% if role in ['admin', 'op'] %}
-                <button id="btnPowerStart" class="btn btn-success" onclick="startServer()">Start</button>
-                <button id="btnPowerStop" class="btn btn-danger" onclick="stopServer()"
-                    style="display:none">Stop</button>
-                {% endif %}
-
-                <a href="/logout" class="btn" style="background: var(--bg-accent); font-size: 0.8rem; padding: 0.4rem 0.8rem;">Logout</a>
-            </div>
-        </header>
-
-        <nav>
-            <div class="nav-link active" onclick="showTab('overview')">Übersicht</div>
-            <div class="nav-link" onclick="showTab('players')">Spieler</div>
-            <div class="nav-link" onclick="showTab('manager')">Manager</div>
-            <div class="nav-link" onclick="showTab('settings')">Server-Einstellungen</div>
-            <div class="nav-link" onclick="showTab('gamerules')">Gamerules</div>
-        </nav>
- Inuit
-
-        <main>
-            <!-- Overview Tab -->
-            <section id="overview" class="tab-content active">
-                <div class="dashboard-grid">
-                    <div class="card">
-                        <div class="card-header">
-                            <h2>Live Performance</h2>
-                        </div>
-                        <div class="stats-group">
-                            <div class="stat-card">
-                                <div class="stat-label">CPU Auslastung</div>
-                                <div class="stat-value" id="cpuLabel">0.0%</div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-label">RAM Nutzung</div>
-                                <div class="stat-value" id="ramLabel">0 MB</div>
-                            </div>
-                        </div>
-                        <div style="margin-top: 1.5rem;">
-                            <div class="form-group">
-                                <label>RAM Zuweisung (MB)</label>
-                                <input type="number" id="ramInput" value="2048" min="512">
-                            </div>
-                            <div class="form-group">
-                                <label>CPU Threads</label>
-                                <input type="number" id="cpuInput" value="2" min="1">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="card" style="grid-column: span 1.5;">
-                        <div class="card-header">
-                            <h2>Konsole</h2>
-                        </div>
-                        <div class="console-box">
-                            <div class="console-logs" id="consoleOutput"></div>
-                            <div class="console-input-wrap">
-                                <input type="text" id="commandInput" placeholder="Befehl eingeben..."
-                                    autocomplete="off">
-                                <button class="btn btn-primary" onclick="sendCommand()">Senden</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Players Tab -->
-            <section id="players" class="tab-content">
-                <div class="dashboard-grid">
-                    <div class="card">
-                        <div class="card-header">
-                            <h2>Spieler Online (<span id="playerCount">0</span>)</h2>
-                        </div>
-                        <div class="player-list" id="playerList">
-                            <p style="color: var(--text-muted); text-align: center; padding: 2rem;">Keine Spieler online.</p>
-                        </div>
-                    </div>
-
-                    <div class="card">
-                        <div class="card-header">
-                            <h2>Zuletzt online / Bekannte Spieler</h2>
-                        </div>
-                        <div class="player-list" id="playerHistoryList">
-                            <p style="color: var(--text-muted); text-align: center; padding: 2rem;">Lade Verlauf...</p>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Manager Tab -->
-            <section id="manager" class="tab-content">
-                <div class="dashboard-grid">
-                    <!-- Versions -->
-                    <div class="card">
-                        <div class="card-header">
-                            <h2>Server-Version</h2>
-                        </div>
-                        <div style="padding: 1.5rem;">
-                            <div class="form-group">
-                                <label>Provider</label>
-                                <select id="versionType" class="gamerule-input" style="width: 100%; text-align: left;" onchange="loadVersionList()">
-                                    <option value="paper">PaperMC (Empfohlen)</option>
-                                    <option value="vanilla">Vanilla (Mojang)</option>
-                                </select>
-                            </div>
-                            <div class="form-group" style="margin-top: 1rem;">
-                                <label>Version auswählen</label>
-                                <select id="versionSelect" class="gamerule-input" style="width: 100%; text-align: left;">
-                                    <option>Lade Versionen...</option>
-                                </select>
-                            </div>
-                            <button class="btn btn-primary" style="width: 100%; margin-top: 1.5rem;" onclick="downloadVersion()">
-                                Installieren & Restart
-                            </button>
-                            <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 1rem;">
-                                ⚠️ Der Server muss gestoppt sein. Ein Backup der alten server.jar wird erstellt.
-                            </p>
-                        </div>
-                    </div>
-
-                    <!-- Plugins -->
-                    <div class="card">
-                        <div class="card-header">
-                            <h2>Plugins</h2>
-                            <label class="btn btn-primary" style="font-size: 0.8rem; cursor: pointer;">
-                                Hochladen <input type="file" id="pluginUpload" style="display:none" onchange="uploadPlugin()">
-                            </label>
-                        </div>
-                        <div class="player-list" id="pluginList" style="max-height: 300px; overflow-y: auto;">
-                            <!-- Dynamic Content -->
-                        </div>
-                    </div>
-                </div>
-
-                <!-- CurseForge -->
-                <div class="card" style="margin-top: 1.5rem;">
-                    <div class="card-header">
-                        <h2>CurseForge Modpacks</h2>
-                        <div style="display: flex; gap: 0.5rem;">
-                            <input type="text" id="modSearch" class="gamerule-input" style="width: 200px;" placeholder="Suchen...">
-                            <button class="btn btn-primary" onclick="searchModpacks()">Suchen</button>
-                        </div>
-                    </div>
-                    <div class="properties-grid" id="modList" style="padding: 1.5rem;">
-                        <p style="color: var(--text-muted);">Nutze die Suche, um Modpacks zu finden.</p>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Settings Tab -->
-            <section id="settings" class="tab-content">
-                <div class="card">
-                    <div class="card-header">
-                        <h2>Server Properties</h2>
-                        {% if role in ['admin', 'op'] %}
-                        <button class="btn btn-primary" onclick="saveProperties()">Speichern</button>
-                        {% else %}
-                        <span style="font-size: 0.8rem; color: var(--text-muted);">Nur Lesezugriff</span>
-                        {% endif %}
-                    </div>
-                    <div class="properties-grid" id="propertiesGrid">
-                        <!-- Dynamic content -->
-                    </div>
-                </div>
-            </section>
-
-            <!-- Gamerules Tab -->
-            <section id="gamerules" class="tab-content">
-                <div class="card">
-                    <div class="card-header">
-                        <h2>Gamerules Manager</h2>
-                    </div>
-                    <div class="gamerules-grid" id="gamerulesGrid">
-                        <!-- Dynamic content -->
-                    </div>
-                </div>
-            </section>
-        </main>
+{% extends "base.html" %}
+
+{% block content %}
+<header>
+    <div class="brand">
+        <h1>MC Manager</h1>
+        <div id="statusPill" class="status-pill status-offline">
+            <span class="status-dot"></span>
+            <span id="statusText">Offline</span>
+        </div>
     </div>
+    <div class="header-actions" style="display: flex; align-items: center; gap: 1.5rem;">
+        <div class="user-info" style="text-align: right; line-height: 1.2;">
+            <div style="font-size: 0.9rem; font-weight: 700;">{{ username }}</div>
+            <div class="role-badge">
+                Rolle: <span class="role-{{ role }}">{{ role }}</span>
+            </div>
+        </div>
+        
+        {% if role in ['admin', 'op'] %}
+        <button id="btnPowerStart" class="btn btn-success" onclick="startServer()">Start</button>
+        <button id="btnPowerStop" class="btn btn-danger" onclick="stopServer()" style="display:none">Stop</button>
+        {% endif %}
 
-    <script>
-        let isRunning = false;
-        let lastLogs = [];
+        <a href="/logout" class="btn" style="background: var(--bg-accent); font-size: 0.8rem; padding: 0.4rem 0.8rem;">Logout</a>
+    </div>
+</header>
 
-        // Tab Switching
-        function showTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+<nav>
+    <div class="nav-link active" onclick="showTab('overview')">Übersicht</div>
+    <div class="nav-link" onclick="showTab('players')">Spieler</div>
+    <div class="nav-link" onclick="showTab('manager')">Manager</div>
+    <div class="nav-link" onclick="showTab('settings')">Server-Einstellungen</div>
+    <div class="nav-link" onclick="showTab('gamerules')">Gamerules</div>
+</nav>
 
-            document.getElementById(tabId).classList.add('active');
-            event.target.classList.add('active');
+<main>
+    {% include "fragments/overview.html" %}
+    {% include "fragments/players.html" %}
+    {% include "fragments/manager.html" %}
+    {% include "fragments/settings.html" %}
+    {% include "fragments/gamerules.html" %}
+</main>
+{% endblock %}
 
-            if (tabId === 'settings') loadProperties();
-            if (tabId === 'gamerules') renderGamerules();
-            if (tabId === 'manager') {
-                loadVersionList();
-                loadPlugins();
-            }
+{% block scripts %}
+<script>
+    let isRunning = false;
+    let lastLogs = [];
+
+    // Tab Switching
+    function showTab(tabId) {
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+
+        document.getElementById(tabId).classList.add('active');
+        event.target.classList.add('active');
+
+        if (tabId === 'settings') loadProperties();
+        if (tabId === 'gamerules') renderGamerules();
+        if (tabId === 'manager') {
+            loadVersionList();
+            loadPlugins();
         }
+    }
 
-        // --- Core Functions ---
-        async function fetchStatus() {
-            try {
-                const res = await fetch('/api/status');
-                const data = await res.json();
-                isRunning = data.running;
+    // --- Core Functions ---
+    async function fetchStatus() {
+        try {
+            const res = await fetch('/api/status');
+            const data = await res.json();
+            isRunning = data.running;
 
-                const pill = document.getElementById('statusPill');
-                const text = document.getElementById('statusText');
-                const btnStart = document.getElementById('btnPowerStart');
-                const btnStop = document.getElementById('btnPowerStop');
+            const pill = document.getElementById('statusPill');
+            const text = document.getElementById('statusText');
+            const btnStart = document.getElementById('btnPowerStart');
+            const btnStop = document.getElementById('btnPowerStop');
 
-                if (data.running) {
-                    pill.className = "status-pill status-online";
-                    text.textContent = data.managed ? "Online" : "Online (Fremdstart)";
-                    btnStart.style.display = 'none';
+            if (data.running) {
+                pill.className = "status-pill status-online";
+                text.textContent = data.managed ? "Online" : "Online (Fremdstart)";
+                if (btnStart) btnStart.style.display = 'none';
+                if (btnStop) {
                     btnStop.style.display = 'inline-flex';
                     btnStop.textContent = data.managed ? "Stop" : "Force Stop";
-                } else {
-                    pill.className = "status-pill status-offline";
-                    text.textContent = "Offline";
-                    btnStart.style.display = 'inline-flex';
-                    btnStop.style.display = 'none';
                 }
-            } catch (e) { }
-        }
-
-        async function fetchStats() {
-            if (!isRunning) return;
-            try {
-                const res = await fetch('/api/stats');
-                const data = await res.json();
-                document.getElementById('cpuLabel').textContent = data.cpu + '%';
-                document.getElementById('ramLabel').textContent = data.ram + ' MB';
-            } catch (e) { }
-        }
-
-        async function fetchLogs() {
-            try {
-                const res = await fetch('/api/logs');
-                const data = await res.json();
-                if (data.logs.length !== lastLogs.length) {
-                    const out = document.getElementById('consoleOutput');
-                    out.innerHTML = data.logs.map(l => `<div style="margin-bottom: 2px;">${l}</div>`).join('');
-                    out.scrollTop = out.scrollHeight;
-                    lastLogs = data.logs;
-                }
-            } catch (e) { }
-        }
-
-        async function fetchPlayers() {
-            try {
-                const res = await fetch('/api/players');
-                const data = await res.json();
-                
-                // --- Online Players ---
-                const onlineList = document.getElementById('playerList');
-                document.getElementById('playerCount').textContent = data.online.length;
-
-                if (!isRunning) {
-                    onlineList.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 2rem;">Server offline.</p>';
-                } else if (data.online.length === 0) {
-                    onlineList.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 2rem;">Keine Spieler online.</p>';
-                } else {
-                    onlineList.innerHTML = data.online.map(p => `
-                        <div class="player-row">
-                            <div class="player-name">
-                                <div class="player-avatar" style="background: linear-gradient(135deg, #3b82f6, #4ade80)"></div>
-                                ${p}
-                            </div>
-                            <div class="player-actions">
-                                <button class="btn btn-danger" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;" onclick="runCmd('kick ${p}')">Kick</button>
-                                <button class="btn btn-primary" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; background: var(--secondary);" onclick="runCmd('op ${p}')">OP</button>
-                            </div>
-                        </div>
-                    `).join('');
-                }
-
-                // --- Player History ---
-                const historyList = document.getElementById('playerHistoryList');
-                const historyEntries = Object.entries(data.history).sort((a,b) => {
-                    if (a[1].last_seen === 'Unbekannt') return 1;
-                    if (b[1].last_seen === 'Unbekannt') return -1;
-                    return b[1].last_seen.localeCompare(a[1].last_seen);
-                });
-
-                if (historyEntries.length === 0) {
-                    historyList.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 2rem;">Noch keine Spieler bekannt.</p>';
-                } else {
-                    historyList.innerHTML = historyEntries.map(([name, info]) => `
-                        <div class="player-row" style="opacity: ${data.online.includes(name) ? '1' : '0.6'}">
-                            <div class="player-name">
-                                <div class="player-avatar" style="background: ${data.online.includes(name) ? 'linear-gradient(135deg, #4ade80, #22c55e)' : 'var(--border)'}"></div>
-                                <div>
-                                    <div style="font-size: 0.9rem;">${name} ${data.online.includes(name) ? '<span style="color: var(--primary); font-size: 0.7rem; margin-left: 5px;">● ONLINE</span>' : ''}</div>
-                                    <div style="font-size: 0.7rem; color: var(--text-muted);">Zuletzt: ${info.last_seen}</div>
-                                </div>
-                            </div>
-                            <div class="player-actions">
-                                <button class="btn btn-primary" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; background: var(--bg-accent); color: var(--text-main);" onclick="runCmd('whitelist add ${name}')">Whitelist</button>
-                            </div>
-                        </div>
-                    `).join('');
-                }
-            } catch (e) { console.error("Error fetching players:", e); }
-        }
-
-        // --- Commands ---
-        async function startServer() {
-            const ram = document.getElementById('ramInput').value;
-            const cpu = document.getElementById('cpuInput').value;
-            await fetch('/api/start', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ram, cpu })
-            });
-            fetchStatus();
-        }
-
-        async function stopServer() {
-            await fetch('/api/stop', { method: 'POST' });
-            fetchStatus();
-        }
-
-        async function sendCommand() {
-            const input = document.getElementById('commandInput');
-            const command = input.value;
-            if (!command) return;
-            input.value = '';
-            runCmd(command);
-        }
-
-        async function runCmd(command) {
-            await fetch('/api/command', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ command })
-            });
-        }
-
-        // --- Properties ---
-        let currentProperties = {};
-        async function loadProperties() {
-            const res = await fetch('/api/properties');
-            currentProperties = await res.json();
-            renderProperties();
-        }
-
-        function renderProperties() {
-            const grid = document.getElementById('propertiesGrid');
-            grid.innerHTML = Object.entries(currentProperties).map(([k, v]) => `
-                <div class="prop-item">
-                    <label>${k}</label>
-                    <input type="text" value="${v}" onchange="updateProp('${k}', this.value)" 
-                           ${'{{ role }}' === 'viewer' ? 'disabled' : ''}>
-                </div>
-            `).join('');
-        }
-
-        function updateProp(k, v) {
-            currentProperties[k] = v;
-        }
-
-        async function saveProperties() {
-            const res = await fetch('/api/properties', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(currentProperties)
-            });
-            const data = await res.json();
-            alert(data.message + " (Neustart erforderlich)");
-        }
-
-        // --- Gamerules ---
-        const rules = [
-            { id: 'minecraft:advance_time', name: 'Zeitfortschritt', desc: 'Tag/Nacht Zyklus steuern.', type: 'bool' },
-            { id: 'minecraft:keep_inventory', name: 'Inventar behalten', desc: 'Items bleiben nach Tod erhalten.', type: 'bool' },
-            { id: 'minecraft:mob_griefing', name: 'Mob Griefing', desc: 'Creeper sprengen Blöcke etc.', type: 'bool' },
-            { id: 'minecraft:spawn_mobs', name: 'Mob Spawning', desc: 'Natürliches Erscheinen von Monstern.', type: 'bool' },
-            { id: 'minecraft:weather_cycle', name: 'Wetter Zyklus', desc: 'Regen und Gewitter erlauben.', type: 'bool' },
-            { id: 'minecraft:fire_spread_radius_around_player', name: 'Feuerausbreitung (Radius)', desc: 'Radius um Spieler (0=Aus, -1=Global).', type: 'int', default: 32 },
-            { id: 'minecraft:natural_regeneration', name: 'Natürliche Heilung', desc: 'Heilung durch Sättigung.', type: 'bool' },
-            { id: 'minecraft:spawn_chunk_radius', name: 'Spawn Chunk Radius', desc: 'Größe des geladenen Spawn-Bereichs.', type: 'int', default: 2 },
-            { id: 'minecraft:show_advancement_messages', name: 'Fortschritts-Meldungen', desc: 'Zeige Achievements im Chat.', type: 'bool' }
-        ];
-
-        function renderGamerules() {
-            const grid = document.getElementById('gamerulesGrid');
-            const userRole = '{{ role }}';
-            
-            grid.innerHTML = rules.map(r => `
-                <div class="gamerule-card">
-                    <div class="gamerule-info">
-                        <span class="gamerule-title">${r.name}</span>
-                        <p class="gamerule-desc">${r.desc}</p>
-                        <code class="gamerule-id">${r.id}</code>
-                    </div>
-                    <div class="gamerule-control">
-                        ${r.type === 'bool' ? `
-                            <label class="switch">
-                                <input type="checkbox" onchange="setGamerule('${r.id}', this.checked)" 
-                                       ${userRole === 'viewer' ? 'disabled' : ''}>
-                                <span class="slider round"></span>
-                            </label>
-                        ` : `
-                            <input type="number" class="gamerule-input" value="${r.default || 0}" 
-                                   onchange="setGamerule('${r.id}', this.value)"
-                                   ${userRole === 'viewer' ? 'disabled' : ''}>
-                        `}
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        async function setGamerule(rule, value) {
-            await fetch('/api/gamerule', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ rule, value })
-            });
-        }
-
-        // --- Manager Functions ---
-        async function loadVersionList() {
-            const type = document.getElementById('versionType').value;
-            const select = document.getElementById('versionSelect');
-            select.innerHTML = '<option>Lade...</option>';
-            
-            try {
-                const res = await fetch(`/api/versions/${type}`);
-                const versions = await res.json();
-                
-                select.innerHTML = versions.map(v => {
-                    const id = typeof v === 'string' ? v : v.id;
-                    return `<option value="${id}">${id}</option>`;
-                }).join('');
-            } catch (e) {
-                select.innerHTML = '<option>Fehler beim Laden</option>';
+            } else {
+                pill.className = "status-pill status-offline";
+                text.textContent = "Offline";
+                if (btnStart) btnStart.style.display = 'inline-flex';
+                if (btnStop) btnStop.style.display = 'none';
             }
-        }
+        } catch (e) { }
+    }
 
-        async function downloadVersion() {
-            const type = document.getElementById('versionType').value;
-            const version = document.getElementById('versionSelect').value;
-            if(!confirm(`Möchtest du wirklich ${type} ${version} installieren?`)) return;
-
-            showNotification('Download gestartet...', 'info');
-            const res = await fetch('/api/download/version', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({type, version})
-            });
+    async function fetchStats() {
+        if (!isRunning) return;
+        try {
+            const res = await fetch('/api/stats');
             const data = await res.json();
-            showNotification(data.message, data.status === 'success' ? 'success' : 'error');
-        }
+            document.getElementById('cpuLabel').textContent = data.cpu + '%';
+            document.getElementById('ramLabel').textContent = data.ram + ' MB';
+        } catch (e) { }
+    }
 
-        async function loadPlugins() {
-            const list = document.getElementById('pluginList');
-            const res = await fetch('/api/plugins');
-            const plugins = await res.json();
-            
-            if(plugins.length === 0) {
-                list.innerHTML = '<p style="padding: 1rem; color: var(--text-muted);">Keine Plugins installiert.</p>';
-                return;
+    async function fetchLogs() {
+        try {
+            const res = await fetch('/api/logs');
+            const data = await res.json();
+            if (data.logs.length !== lastLogs.length) {
+                const out = document.getElementById('consoleOutput');
+                out.innerHTML = data.logs.map(l => `<div style="margin-bottom: 2px;">${l}</div>`).join('');
+                out.scrollTop = out.scrollHeight;
+                lastLogs = data.logs;
             }
-            
-            list.innerHTML = plugins.map(p => `
-                <div class="player-item" style="padding: 0.75rem 1.5rem;">
-                    <div style="display: flex; align-items: center; gap: 0.75rem;">
-                        <div style="width: 32px; height: 32px; background: rgba(79, 172, 254, 0.1); border-radius: 6px; display: flex; align-items: center; justify-content: center; color: var(--primary);">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l12 7a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
-                        </div>
-                        <span style="font-size: 0.9rem;">${p}</span>
-                    </div>
-                    <button class="btn" style="padding: 4px; color: #ef4444;" onclick="deletePlugin('${p}')">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                    </button>
-                </div>
-            `).join('');
-        }
+        } catch (e) { }
+    }
 
-        async function uploadPlugin() {
-            const input = document.getElementById('pluginUpload');
-            if(!input.files[0]) return;
-            
-            const formData = new FormData();
-            formData.append('file', input.files[0]);
-            
-            showNotification('Plugin wird hochgeladen...', 'info');
-            const res = await fetch('/api/plugins/upload', {
-                method: 'POST',
-                body: formData
-            });
+    async function fetchPlayers() {
+        try {
+            const res = await fetch('/api/players');
             const data = await res.json();
-            showNotification(data.message, data.status === 'success' ? 'success' : 'error');
-            loadPlugins();
-        }
-
-        async function deletePlugin(name) {
-            if(!confirm('Soll dieses Plugin gelöscht werden?')) return;
-            await fetch('/api/plugins/delete', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({name})
-            });
-            loadPlugins();
-        }
-
-        async function searchModpacks() {
-            const query = document.getElementById('modSearch').value;
-            const res = await fetch(`/api/modpacks/search?query=${query}`);
-            const packs = await res.json();
             
-            const list = document.getElementById('modList');
-            list.innerHTML = packs.map(p => `
-                <div class="gamerule-card" style="min-height: auto; align-items: center; flex-direction: row; justify-content: space-between;">
-                    <div class="gamerule-info" style="margin: 0;">
-                        <span class="gamerule-title">${p.name}</span>
-                        <span class="gamerule-desc">MC Version: ${p.version}</span>
+            const onlineList = document.getElementById('playerList');
+            document.getElementById('playerCount').textContent = data.online.length;
+
+            if (!isRunning) {
+                onlineList.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 2rem;">Server offline.</p>';
+            } else if (data.online.length === 0) {
+                onlineList.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 2rem;">Keine Spieler online.</p>';
+            } else {
+                onlineList.innerHTML = data.online.map(p => `
+                    <div class="player-row">
+                        <div class="player-name">
+                            <div class="player-avatar" style="background: linear-gradient(135deg, #3b82f6, #4ade80)"></div>
+                            ${p}
+                        </div>
+                        <div class="player-actions">
+                            <button class="btn btn-danger" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;" onclick="runCmd('kick ${p}')">Kick</button>
+                            <button class="btn btn-primary" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; background: var(--secondary);" onclick="runCmd('op ${p}')">OP</button>
+                        </div>
                     </div>
-                    <button class="btn btn-primary" style="font-size: 0.8rem;">Installieren</button>
-                </div>
-            `).join('');
-        }
+                `).join('');
+            }
 
-        function showNotification(msg, type) {
-            // Einfache Alert-Funktion für heute, wir können später ein echtes Toast-System bauen
-            alert(`${type.toUpperCase()}: ${msg}`);
-        }
+            const historyList = document.getElementById('playerHistoryList');
+            const historyEntries = Object.entries(data.history).sort((a,b) => {
+                if (a[1].last_seen === 'Unbekannt') return 1;
+                if (b[1].last_seen === 'Unbekannt') return -1;
+                return b[1].last_seen.localeCompare(a[1].last_seen);
+            });
 
-        // --- Polling ---
-        setInterval(fetchStatus, 1500);
-        setInterval(fetchStats, 2000);
-        setInterval(fetchLogs, 1000);
-        setInterval(fetchPlayers, 3000);
+            if (historyEntries.length === 0) {
+                historyList.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 2rem;">Noch keine Spieler bekannt.</p>';
+            } else {
+                historyList.innerHTML = historyEntries.map(([name, info]) => `
+                    <div class="player-row" style="opacity: ${data.online.includes(name) ? '1' : '0.6'}">
+                        <div class="player-name">
+                            <div class="player-avatar" style="background: ${data.online.includes(name) ? 'linear-gradient(135deg, #4ade80, #22c55e)' : 'var(--border)'}"></div>
+                            <div>
+                                <div style="font-size: 0.9rem;">${name} ${data.online.includes(name) ? '<span style="color: var(--primary); font-size: 0.7rem; margin-left: 5px;">● ONLINE</span>' : ''}</div>
+                                <div style="font-size: 0.7rem; color: var(--text-muted);">Zuletzt: ${info.last_seen}</div>
+                            </div>
+                        </div>
+                        <div class="player-actions">
+                            <button class="btn btn-primary" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; background: var(--bg-accent); color: var(--text-main);" onclick="runCmd('whitelist add ${name}')">Whitelist</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        } catch (e) { console.error("Error fetching players:", e); }
+    }
 
-        // Initial
+    // --- Commands ---
+    async function startServer() {
+        const ram = document.getElementById('ramInput').value;
+        const cpu = document.getElementById('cpuInput').value;
+        await fetch('/api/start', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ram, cpu })
+        });
         fetchStatus();
-        fetchLogs();
-    </script>
-</body>
+    }
 
-</html>
+    async function stopServer() {
+        await fetch('/api/stop', { method: 'POST' });
+        fetchStatus();
+    }
+
+    async function sendCommand() {
+        const input = document.getElementById('commandInput');
+        const command = input.value;
+        if (!command) return;
+        input.value = '';
+        runCmd(command);
+    }
+
+    async function runCmd(command) {
+        await fetch('/api/command', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ command })
+        });
+    }
+
+    // --- Properties ---
+    let currentProperties = {};
+    async function loadProperties() {
+        const res = await fetch('/api/properties');
+        currentProperties = await res.json();
+        renderProperties();
+    }
+
+    function renderProperties() {
+        const grid = document.getElementById('propertiesGrid');
+        const role = '{{ role }}';
+        grid.innerHTML = Object.entries(currentProperties).map(([k, v]) => `
+            <div class="prop-item">
+                <label>${k}</label>
+                <input type="text" value="${v}" onchange="updateProp('${k}', this.value)" 
+                       ${role === 'viewer' ? 'disabled' : ''}>
+            </div>
+        `).join('');
+    }
+
+    function updateProp(k, v) {
+        currentProperties[k] = v;
+    }
+
+    async function saveProperties() {
+        const res = await fetch('/api/properties', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(currentProperties)
+        });
+        const data = await res.json();
+        alert(data.message + " (Neustart erforderlich)");
+    }
+
+    // --- Gamerules ---
+    const rules = [
+        { id: 'minecraft:advance_time', name: 'Zeitfortschritt', desc: 'Tag/Nacht Zyklus steuern.', type: 'bool' },
+        { id: 'minecraft:keep_inventory', name: 'Inventar behalten', desc: 'Items bleiben nach Tod erhalten.', type: 'bool' },
+        { id: 'minecraft:mob_griefing', name: 'Mob Griefing', desc: 'Creeper sprengen Blöcke etc.', type: 'bool' },
+        { id: 'minecraft:spawn_mobs', name: 'Mob Spawning', desc: 'Natürliches Erscheinen von Monstern.', type: 'bool' },
+        { id: 'minecraft:weather_cycle', name: 'Wetter Zyklus', desc: 'Regen und Gewitter erlauben.', type: 'bool' },
+        { id: 'minecraft:fire_spread_radius_around_player', name: 'Feuerausbreitung (Radius)', desc: 'Radius um Spieler (0=Aus, -1=Global).', type: 'int', default: 32 },
+        { id: 'minecraft:natural_regeneration', name: 'Natürliche Heilung', desc: 'Heilung durch Sättigung.', type: 'bool' },
+        { id: 'minecraft:spawn_chunk_radius', name: 'Spawn Chunk Radius', desc: 'Größe des geladenen Spawn-Bereichs.', type: 'int', default: 2 },
+        { id: 'minecraft:show_advancement_messages', name: 'Fortschritts-Meldungen', desc: 'Zeige Achievements im Chat.', type: 'bool' }
+    ];
+
+    function renderGamerules() {
+        const grid = document.getElementById('gamerulesGrid');
+        const role = '{{ role }}';
+        
+        grid.innerHTML = rules.map(r => `
+            <div class="gamerule-card">
+                <div class="gamerule-info">
+                    <span class="gamerule-title">${r.name}</span>
+                    <p class="gamerule-desc">${r.desc}</p>
+                    <code class="gamerule-id">${r.id}</code>
+                </div>
+                <div class="gamerule-control">
+                    ${r.type === 'bool' ? `
+                        <label class="switch">
+                            <input type="checkbox" onchange="setGamerule('${r.id}', this.checked)" 
+                                   ${role === 'viewer' ? 'disabled' : ''}>
+                            <span class="slider"></span>
+                        </label>
+                    ` : `
+                        <input type="number" class="gamerule-input" value="${r.default || 0}" 
+                               onchange="setGamerule('${r.id}', this.value)"
+                               ${role === 'viewer' ? 'disabled' : ''}>
+                    `}
+                </div>
+            </div>
+        `).join('');
+    }
+
+    async function setGamerule(rule, value) {
+        await fetch('/api/gamerule', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ rule, value })
+        });
+    }
+
+    // --- Manager Functions ---
+    async function loadVersionList() {
+        const type = document.getElementById('versionType').value;
+        const select = document.getElementById('versionSelect');
+        select.innerHTML = '<option>Lade...</option>';
+        try {
+            const res = await fetch(`/api/versions/${type}`);
+            const versions = await res.json();
+            
+            select.innerHTML = versions.map(v => {
+                const id = typeof v === 'string' ? v : v.id;
+                return `<option value="${id}">${id}</option>`;
+            }).join('');
+        } catch (e) {
+            select.innerHTML = '<option>Fehler beim Laden</option>';
+        }
+    }
+
+    async function downloadVersion() {
+        const type = document.getElementById('versionType').value;
+        const version = document.getElementById('versionSelect').value;
+        if(!confirm(`Möchtest du wirklich ${type} ${version} installieren?`)) return;
+        alert('Download gestartet...');
+        const res = await fetch('/api/download/version', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({type, version})
+        });
+        const data = await res.json();
+        alert(data.message);
+    }
+
+    async function loadPlugins() {
+        const list = document.getElementById('pluginList');
+        const res = await fetch('/api/plugins');
+        const plugins = await res.json();
+        if(plugins.length === 0) {
+            list.innerHTML = '<p style="padding: 1rem; color: var(--text-muted);">Keine Plugins installiert.</p>';
+            return;
+        }
+        list.innerHTML = plugins.map(p => `
+            <div class="player-row" style="padding: 0.75rem 1.25rem;">
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <span style="font-size: 0.9rem;">${p}</span>
+                </div>
+                <button class="btn" style="padding: 4px; color: var(--danger);" onclick="deletePlugin('${p}')">
+                    Delete
+                </button>
+            </div>
+        `).join('');
+    }
+
+    async function uploadPlugin() {
+        const input = document.getElementById('pluginUpload');
+        if(!input.files[0]) return;
+        const formData = new FormData();
+        formData.append('file', input.files[0]);
+        const res = await fetch('/api/plugins/upload', { method: 'POST', body: formData });
+        const data = await res.json();
+        alert(data.message || "Upload fertig");
+        loadPlugins();
+    }
+
+    async function deletePlugin(name) {
+        if(!confirm('Soll dieses Plugin gelöscht werden?')) return;
+        await fetch('/api/plugins/delete', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({name})
+        });
+        loadPlugins();
+    }
+
+    async function searchModpacks() {
+        const query = document.getElementById('modSearch').value;
+        const res = await fetch(`/api/modpacks/search?query=${query}`);
+        const packs = await res.json();
+        const list = document.getElementById('modList');
+        list.innerHTML = packs.map(p => `
+            <div class="gamerule-card" style="min-height: auto; align-items: center; flex-direction: row; justify-content: space-between;">
+                <div class="gamerule-info" style="margin: 0;">
+                    <span class="gamerule-title">${p.name}</span>
+                    <span class="gamerule-desc">MC Version: ${p.version}</span>
+                </div>
+                <button class="btn btn-primary" style="font-size: 0.8rem;">Installieren</button>
+            </div>
+        `).join('');
+    }
+
+    // --- Polling ---
+    setInterval(fetchStatus, 1500);
+    setInterval(fetchStats, 2000);
+    setInterval(fetchLogs, 1000);
+    setInterval(fetchPlayers, 3000);
+
+    // Initial
+    fetchStatus();
+    fetchLogs();
+</script>
+{% endblock %}

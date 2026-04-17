@@ -1,0 +1,55 @@
+<section id="manager" class="tab-content">
+    <div class="dashboard-grid">
+        <div class="card">
+            <div class="card-header">
+                <h2>Server-Version</h2>
+            </div>
+            <div style="padding: 1.5rem;">
+                <div class="form-group">
+                    <label>Provider</label>
+                    <select id="versionType" class="gamerule-input" style="width: 100%; text-align: left;" onchange="loadVersionList()">
+                        <option value="paper">PaperMC (Empfohlen)</option>
+                        <option value="vanilla">Vanilla (Mojang)</option>
+                    </select>
+                </div>
+                <div class="form-group" style="margin-top: 1rem;">
+                    <label>Version auswählen</label>
+                    <select id="versionSelect" class="gamerule-input" style="width: 100%; text-align: left;">
+                        <option>Lade Versionen...</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary" style="width: 100%; margin-top: 1.5rem;" onclick="downloadVersion()">
+                    Installieren & Restart
+                </button>
+                <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 1rem;">
+                    ⚠️ Der Server muss gestoppt sein. Ein Backup der alten server.jar wird erstellt.
+                </p>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h2>Plugins</h2>
+                <label class="btn btn-primary" style="font-size: 0.8rem; cursor: pointer;">
+                    Hochladen <input type="file" id="pluginUpload" style="display:none" onchange="uploadPlugin()">
+                </label>
+            </div>
+            <div class="player-list" id="pluginList" style="max-height: 300px; overflow-y: auto;">
+                <!-- Dynamic Content -->
+            </div>
+        </div>
+    </div>
+
+    <div class="card" style="margin-top: 1.5rem;">
+        <div class="card-header">
+            <h2>CurseForge Modpacks</h2>
+            <div style="display: flex; gap: 0.5rem;">
+                <input type="text" id="modSearch" class="gamerule-input" style="width: 200px;" placeholder="Suchen...">
+                <button class="btn btn-primary" onclick="searchModpacks()">Suchen</button>
+            </div>
+        </div>
+        <div class="properties-grid" id="modList" style="padding: 1.5rem;">
+            <p style="color: var(--text-muted);">Nutze die Suche, um Modpacks zu finden.</p>
+        </div>
+    </div>
+</section>

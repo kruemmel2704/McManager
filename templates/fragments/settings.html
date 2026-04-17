@@ -1,0 +1,15 @@
+<section id="settings" class="tab-content">
+    <div class="card">
+        <div class="card-header">
+            <h2>Server Properties</h2>
+            {% if role in ['admin', 'op'] %}
+            <button class="btn btn-primary" onclick="saveProperties()">Speichern</button>
+            {% else %}
+            <span style="font-size: 0.8rem; color: var(--text-muted);">Nur Lesezugriff</span>
+            {% endif %}
+        </div>
+        <div class="properties-grid" id="propertiesGrid">
+            <!-- Dynamic content -->
+        </div>
+    </div>
+</section>
