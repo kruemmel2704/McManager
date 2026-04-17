@@ -19,7 +19,7 @@ def check_and_install_dependencies():
                 print(f"[!] Error: {req_path} not found. Cannot auto-install.")
                 return
 
-            subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", req_path])
+            subprocess.check_call([sys.executable, "-m", "pip", "install", "--break-system-packages", "-r", req_path])
             print("[+] Dependencies installed successfully. Please restart the application.")
             sys.exit(0) # Exit to allow the user/system to restart with new packages available
         except Exception as e:
