@@ -80,11 +80,12 @@ By default, the dashboard will be available at http://your-ip:5000.
 
 ## Setup and Installation
 
-### 1. Fast Installation
-Run the included setup script to install dependencies and prepare the environment:
+### 1. Ready to Run
+Simply run the application. The dashboard will automatically check for missing dependencies and install them if necessary:
 ```bash
-python3 setup.py
+python3 app.py
 ```
+*(Alternatively, you can run `python3 setup.py` for a manual environment check and directory preparation).*
 
 ### 2. Configuration Guides
 - [Microsoft Auth Setup (Azure)](AZURE_GUIDE.md) - Register your app for OAuth2 login.
