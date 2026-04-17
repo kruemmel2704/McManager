@@ -11,8 +11,8 @@ def check_and_install_dependencies():
     except ImportError:
         print("[!] Missing dependencies. Starting automated setup...")
         try:
-            # We assume requirements.txt is in the same directory as app.py
-            base_path = os.path.dirname(os.path.abspath(__file__))
+            # requirements.txt is in the project root, two levels up from mc_manager/core/
+            base_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
             req_path = os.path.join(base_path, "requirements.txt")
             
             if not os.path.exists(req_path):
